@@ -15,12 +15,14 @@ services:
       FORWARD_PORT: 1883
 
   influxdb:
+    image: influxdb
     build: ./influxdb
     ports:
       - "8086:8086"
-      - "8000:8000"
+      - "8083:8083"
     networks:
       - db_adapter
+      - db_generator
     volumes:
       - ./influxdb:/var/lib/influxdb 
       - ./influxdb/init.db/init.iql:/docker-entrypoint-initdb.d/ 
@@ -29,6 +31,7 @@ services:
       - INFLUXDB_DB=iotdb
 
   adapter:
+    image: adapter
     build: ./adapter
     depends_on:
       - mosquitto
@@ -39,18 +42,45 @@ services:
     environment:
       FORWARD_HOST: mosquitto
 
+  keygenerator:
+    image: keygenerator
+    build: ./keygenerator
+    depends_on:
+      - influxdb
+    networks:
+      - db_generator
+
   sensors:
+    image: sensors
     build: ./sensors
     depends_on:
       - mosquitto
     networks:
       - sensors_net
 
+  grafana:
+    image: grafana/grafana:latest
+    links:
+      - influxdb
+    depends_on:
+      - influxdb
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/data:/var/lib/grafana
+    
 networks:
   broker_adapter:
     external: false
   db_adapter:
     external: false
+  db_generator:
+    external: false
   sensors_net:
     external: false
+
+volumes:
+  influxdb:
+  grafana:
+  chronograf_data:
 

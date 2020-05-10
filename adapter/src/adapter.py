@@ -1,14 +1,15 @@
 # IDP - CITY BIKE
 # MADALINA MOGA, 343C3
+#
+# Takes sensor data from broker, repacks it and sends it to
+# a database
 
 from influxdb import InfluxDBClient
 import paho.mqtt.client as mqtt
 import json
 import time
 
-
-# Upon connecting to the mqtt broker, subscribe to all 
-# its topics
+# Upon connecting to the mqtt broker, subscribe to topic station_data
 def on_connect(client_mqtt, userdata, flags, rc):
     print("Connected with result code: " + str(rc))
     client_mqtt.subscribe("station_data")
@@ -30,6 +31,8 @@ def on_message(client_mqtt, userdata, msg):
         t = time.localtime()
         timestamp = time.strftime("%H:%M:%S", t)
 
+    # Organize message with tags. Tags will be used for
+    # queries in influxdb
     message_body = [{"measurement":"station_data",
     				 "tags" : { "bike_key_dispenser": received_dict["dispenser"],
                 				"bike_keys_available": received_dict["keys"],
@@ -41,24 +44,22 @@ def on_message(client_mqtt, userdata, msg):
     				"fields" : {
     							"available_bikes": received_dict["bikes"],
                 				"available_docks": received_dict["docks"],
+                                "batt" : received_dict["battery_value"],
                 				"unavailable_bikes": received_dict["ubikes"],
                 				"unavailable_docks": received_dict["udocks"]
     				}
     				}]
 
-    client_db.write_points(message_body);
-    #result = client_db.query("SELECT available_bikes from station_data;")
-    result = client_db.query(query='select available_bikes from station_data where "name"=$name;', bind_params={"name": 'unirii'})
-    print("Result: {0}".format(result))
+    client_db.write_points(message_body)
 
 
-# Write received data to stdout
+# Debugging purposes
 def on_log(client_mqtt, userdata, level, buf):
     print("Adapter log: ", buf)
 
  
 if __name__ == '__main__':
-    # Instantiate a connection to the InfluxDB
+    # Instantiate a connection to the iotdb database
     client_db = InfluxDBClient(host='influxdb', port='8086', username='', password='', database='iotdb')
     
     # Create an mqtt client and connect to broker

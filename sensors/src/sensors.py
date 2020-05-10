@@ -1,22 +1,26 @@
 # IDP - CITY BIKE
 # MADALINA MOGA, 343C3
+#
+# This emulates sensor data
 
 import paho.mqtt.client as paho
 import json
 import time
+import datetime
 import random
 
+# MQTT settings
 broker = "mosquitto"
 port = 1883
 mqtt_topic = "station_data"
 
-iterations = 10
-
+# Sensor initial values
 battery = 100
 battery_level = "safe"
 maximum_bikes = 30
 maximum_docks = 30
 
+# Used for debugging
 def on_publish_romana(client, userdata, result):
     print("Sensor Piata Romana : Data published.")
     pass
@@ -29,6 +33,7 @@ def on_publish_eroilor(client, userdata, result):
     print("Sensor Eroilor : Data published.")
     pass
 
+# Init mqtt clients
 client_romana = paho.Client("romana")
 client_romana.on_publish = on_publish_romana
 client_romana.connect(broker, port)
@@ -42,11 +47,32 @@ client_eroilor.on_publish = on_publish_eroilor
 client_eroilor.connect(broker, port)
 
 stations_dict = {"piata_romana" : (12345, "true", client_romana), "unirii" : (2342, "false", client_unirii), "eroilor" : (988, "false", client_eroilor)}
-battery_dict = {"piata_romana" : 150, "unirii" : 70, "eroilor" : 40}
+battery_dict = {"piata_romana" : 100, "unirii" : 100, "eroilor" : 50}
 
-for i in range(1, iterations):
+# Generate sensor data and publish it using mqtt
+while True:
     for s in stations_dict.keys():
+
+        bikes = random.randint(0, maximum_bikes)
+        ubikes = random.randint(0, maximum_bikes)
+
+        docks = random.randint(0, maximum_docks)
+        udocks = random.randint(0, maximum_docks)
+
         battery = battery_dict[s]
+
+        h = datetime.datetime.now().hour
+        if h >= 6 and h <= 10 :
+            battery = battery + 0.1 * h
+        elif h > 10 and h <= 16 :
+            battery = battery + 0.2 * h
+        elif h > 16 and h < 21 :
+            battery = battery - 0.1 * h
+        else : 
+            if h < 6 :
+                bikes = random.randint(20, maximum_bikes)
+                docks = random.randint(0, 5)
+            battery = battery - 0.02  
 
         if battery > 70 :
             battery_level = "safe"
@@ -55,7 +81,7 @@ for i in range(1, iterations):
         else : 
             battery_level = "critical"
 
-        battery_dict[s] = battery - 1;
+        battery_dict[s] = battery
 
         if battery < 0:
             continue
@@ -63,18 +89,17 @@ for i in range(1, iterations):
         t = time.localtime()
         timestamp = time.strftime("%H:%M:%S", t)
 
-        bikes = random.randint(0, maximum_bikes)
-        ubikes = random.randint(0, maximum_bikes)
-
-        docks = random.randint(0, maximum_docks)
-        udocks = random.randint(0, maximum_docks)
+        if bikes > 0:
+            available_keys = "true"
+        else:
+            available_keys = "false"
 
         if random.randint(0, 300) % 5 :
-            message = json.dumps({"dispenser": stations_dict[s][1], "keys": "false", "id" : str(stations_dict[s][0]), "name" : s,
-                        "battery" : battery_level, "bikes": bikes, "docks": docks, "ubikes": ubikes, "udocks": udocks})
+            message = json.dumps({"dispenser": stations_dict[s][1], "keys": available_keys, "id" : str(stations_dict[s][0]), "name" : s,
+                        "battery" : battery_level, "bikes": bikes, "docks": docks, "battery_value": battery, "ubikes": ubikes, "udocks": udocks})
         else :
-            message = json.dumps({"dispenser": stations_dict[s][1], "keys": "false", "id" : str(stations_dict[s][0]), "name" : s,
-                        "battery" : battery_level, "timestamp": timestamp, "bikes": bikes, "docks": docks, "ubikes": ubikes, "udocks": udocks})
+            message = json.dumps({"dispenser": stations_dict[s][1], "keys": available_keys, "id" : str(stations_dict[s][0]), "name" : s,
+                        "battery" : battery_level, "timestamp": timestamp, "bikes": bikes, "docks": docks, "battery_value": battery, "ubikes": ubikes, "udocks": udocks})
 
         d = random.randint(1, 30)
         time.sleep(d)
