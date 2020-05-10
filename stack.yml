@@ -4,20 +4,21 @@ services:
   mosquitto:
     image: eclipse-mosquitto
     ports:
-      - 1883:1883
+      - "1883:1883"
     volumes:
       - ./mosquitto/data:/mosquitto/data 
       - ./mosquitto/log:/mosquitto/log 
     networks:
-      - broker_adapter 
+      - broker_adapter
+      - sensors_net
     environment:
       FORWARD_PORT: 1883
 
   influxdb:
     build: ./influxdb
     ports:
-      - 8086:8086
-      - 8000:8000
+      - "8086:8086"
+      - "8000:8000"
     networks:
       - db_adapter
     volumes:
@@ -36,11 +37,20 @@ services:
       - broker_adapter 
       - db_adapter 
     environment:
-      FORWARD_HOST: mosquitto 
+      FORWARD_HOST: mosquitto
+
+  sensors:
+    build: ./sensors
+    depends_on:
+      - mosquitto
+    networks:
+      - sensors_net
 
 networks:
   broker_adapter:
     external: false
   db_adapter:
+    external: false
+  sensors_net:
     external: false
 
