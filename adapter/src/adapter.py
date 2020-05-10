@@ -74,5 +74,5 @@ if __name__ == '__main__':
     client_mqtt.loop_forever()
 
     # Drop database
-    client_db.drop_database(dbname)
+    client_db.drop_database()
 

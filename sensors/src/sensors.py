@@ -46,7 +46,7 @@ client_eroilor = paho.Client("eroilor")
 client_eroilor.on_publish = on_publish_eroilor
 client_eroilor.connect(broker, port)
 
-stations_dict = {"piata_romana" : (12345, "true", client_romana), "unirii" : (2342, "false", client_unirii), "eroilor" : (988, "false", client_eroilor)}
+stations_dict = {"piata_romana" : (12345, "true", client_romana), "unirii" : (2342, "true", client_unirii), "eroilor" : (988, "false", client_eroilor)}
 battery_dict = {"piata_romana" : 100, "unirii" : 100, "eroilor" : 50}
 
 # Generate sensor data and publish it using mqtt
@@ -89,7 +89,7 @@ while True:
         t = time.localtime()
         timestamp = time.strftime("%H:%M:%S", t)
 
-        if bikes > 0:
+        if bikes % 2 == 0:
             available_keys = "true"
         else:
             available_keys = "false"
