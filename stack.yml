@@ -22,7 +22,6 @@ services:
       - "8083:8083"
     networks:
       - db_adapter
-      - db_generator
     volumes:
       - ./influxdb:/var/lib/influxdb 
       - ./influxdb/init.db/init.iql:/docker-entrypoint-initdb.d/ 
@@ -41,14 +40,6 @@ services:
       - db_adapter 
     environment:
       FORWARD_HOST: mosquitto
-
-  keygenerator:
-    image: keygenerator
-    build: ./keygenerator
-    depends_on:
-      - influxdb
-    networks:
-      - db_generator
 
   sensors:
     image: sensors
@@ -73,8 +64,6 @@ networks:
   broker_adapter:
     external: false
   db_adapter:
-    external: false
-  db_generator:
     external: false
   sensors_net:
     external: false

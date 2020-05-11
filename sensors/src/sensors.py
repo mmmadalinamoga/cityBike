@@ -47,7 +47,7 @@ client_eroilor.on_publish = on_publish_eroilor
 client_eroilor.connect(broker, port)
 
 stations_dict = {"piata_romana" : (12345, "true", client_romana), "unirii" : (2342, "true", client_unirii), "eroilor" : (988, "false", client_eroilor)}
-battery_dict = {"piata_romana" : 100, "unirii" : 100, "eroilor" : 50}
+battery_dict = {"piata_romana" : 80, "unirii" : 65, "eroilor" : 50}
 
 # Generate sensor data and publish it using mqtt
 while True:
@@ -62,14 +62,14 @@ while True:
         battery = battery_dict[s]
 
         h = datetime.datetime.now().hour
-        if h >= 6 and h <= 10 :
+        if h >= 4 and h <= 10 :
             battery = battery + 0.1 * h
         elif h > 10 and h <= 16 :
             battery = battery + 0.2 * h
         elif h > 16 and h < 21 :
             battery = battery - 0.1 * h
         else : 
-            if h < 6 :
+            if h < 4 :
                 bikes = random.randint(20, maximum_bikes)
                 docks = random.randint(0, 5)
             battery = battery - 0.02  
